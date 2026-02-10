@@ -623,6 +623,21 @@ class Blender(core.View):
     mat.use_nodes = True
     bsdf_node = mat.node_tree.nodes["Principled BSDF"]
 
+    # Helper to get BSDF input by name, handling Blender 5.0 renames
+    def _bsdf_input(name):
+      renames = {
+        "Specular": "Specular IOR Level",
+        "Transmission": "Transmission Weight",
+        "Transmission Roughness": None,  # removed in Blender 5.0
+        "Emission": "Emission Color",
+      }
+      if name in bsdf_node.inputs:
+        return bsdf_node.inputs[name]
+      new_name = renames.get(name)
+      if new_name and new_name in bsdf_node.inputs:
+        return bsdf_node.inputs[new_name]
+      return None
+
     obj.observe(AttributeSetter(bsdf_node.inputs["Base Color"], "default_value"), "color")
     obj.observe(KeyframeSetter(bsdf_node.inputs["Base Color"], "default_value"), "color",
                 type="keyframe")
@@ -632,9 +647,11 @@ class Blender(core.View):
     obj.observe(AttributeSetter(bsdf_node.inputs["Metallic"], "default_value"), "metallic")
     obj.observe(KeyframeSetter(bsdf_node.inputs["Metallic"], "default_value"), "metallic",
                 type="keyframe")
-    obj.observe(AttributeSetter(bsdf_node.inputs["Specular"], "default_value"), "specular")
-    obj.observe(KeyframeSetter(bsdf_node.inputs["Specular"], "default_value"), "specular",
-                type="keyframe")
+    specular_input = _bsdf_input("Specular")
+    if specular_input:
+      obj.observe(AttributeSetter(specular_input, "default_value"), "specular")
+      obj.observe(KeyframeSetter(specular_input, "default_value"), "specular",
+                  type="keyframe")
     obj.observe(AttributeSetter(bsdf_node.inputs["Specular Tint"],
                                 "default_value"), "specular_tint")
     obj.observe(KeyframeSetter(bsdf_node.inputs["Specular Tint"], "default_value"), "specular_tint",
@@ -642,16 +659,22 @@ class Blender(core.View):
     obj.observe(AttributeSetter(bsdf_node.inputs["IOR"], "default_value"), "ior")
     obj.observe(KeyframeSetter(bsdf_node.inputs["IOR"], "default_value"), "ior",
                 type="keyframe")
-    obj.observe(AttributeSetter(bsdf_node.inputs["Transmission"], "default_value"), "transmission")
-    obj.observe(KeyframeSetter(bsdf_node.inputs["Transmission"], "default_value"), "transmission",
-                type="keyframe")
-    obj.observe(AttributeSetter(bsdf_node.inputs["Transmission Roughness"], "default_value"),
-                "transmission_roughness")
-    obj.observe(KeyframeSetter(bsdf_node.inputs["Transmission Roughness"], "default_value"),
-                "transmission_roughness", type="keyframe")
-    obj.observe(AttributeSetter(bsdf_node.inputs["Emission"], "default_value"), "emission")
-    obj.observe(KeyframeSetter(bsdf_node.inputs["Emission"], "default_value"), "emission",
-                type="keyframe")
+    transmission_input = _bsdf_input("Transmission")
+    if transmission_input:
+      obj.observe(AttributeSetter(transmission_input, "default_value"), "transmission")
+      obj.observe(KeyframeSetter(transmission_input, "default_value"), "transmission",
+                  type="keyframe")
+    transmission_rough_input = _bsdf_input("Transmission Roughness")
+    if transmission_rough_input:
+      obj.observe(AttributeSetter(transmission_rough_input, "default_value"),
+                  "transmission_roughness")
+      obj.observe(KeyframeSetter(transmission_rough_input, "default_value"),
+                  "transmission_roughness", type="keyframe")
+    emission_input = _bsdf_input("Emission")
+    if emission_input:
+      obj.observe(AttributeSetter(emission_input, "default_value"), "emission")
+      obj.observe(KeyframeSetter(emission_input, "default_value"), "emission",
+                  type="keyframe")
     return mat
 
   @add_asset.register(core.FlatMaterial)
