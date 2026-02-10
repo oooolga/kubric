@@ -77,6 +77,9 @@ def set_up_exr_output_node(default_layers=("Image", "Depth"),
   # Blender 5.0+: compositing_node_group; older: node_tree
   if hasattr(bpy.context.scene, 'compositing_node_group'):
     tree = bpy.context.scene.compositing_node_group
+    if tree is None:
+      tree = bpy.data.node_groups.new("Compositing Nodetree", "CompositorNodeTree")
+      bpy.context.scene.compositing_node_group = tree
   else:
     tree = bpy.context.scene.node_tree
   links = tree.links
