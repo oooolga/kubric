@@ -652,10 +652,13 @@ class Blender(core.View):
       obj.observe(AttributeSetter(specular_input, "default_value"), "specular")
       obj.observe(KeyframeSetter(specular_input, "default_value"), "specular",
                   type="keyframe")
-    obj.observe(AttributeSetter(bsdf_node.inputs["Specular Tint"],
-                                "default_value"), "specular_tint")
-    obj.observe(KeyframeSetter(bsdf_node.inputs["Specular Tint"], "default_value"), "specular_tint",
-                type="keyframe")
+    # Specular Tint changed from float to color in Blender 4.0+; skip if type mismatches
+    specular_tint_input = bsdf_node.inputs.get("Specular Tint")
+    if specular_tint_input and specular_tint_input.type == 'VALUE':
+      obj.observe(AttributeSetter(specular_tint_input,
+                                  "default_value"), "specular_tint")
+      obj.observe(KeyframeSetter(specular_tint_input, "default_value"), "specular_tint",
+                  type="keyframe")
     obj.observe(AttributeSetter(bsdf_node.inputs["IOR"], "default_value"), "ior")
     obj.observe(KeyframeSetter(bsdf_node.inputs["IOR"], "default_value"), "ior",
                 type="keyframe")
