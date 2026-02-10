@@ -430,9 +430,14 @@ class Blender(core.View):
       with io.StringIO() as fstdout:  # < scratch stdout buffer
         with redirect_stdout(fstdout):  # < also suppresses python stdout
           if extension == "obj":
-            bpy.ops.import_scene.obj(filepath=obj.render_filename,
-                                     use_split_objects=False,
-                                     **obj.render_import_kwargs)
+            # Blender 4.0+: import_scene.obj -> wm.obj_import
+            if hasattr(bpy.ops.wm, 'obj_import'):
+              bpy.ops.wm.obj_import(filepath=obj.render_filename,
+                                    **obj.render_import_kwargs)
+            else:
+              bpy.ops.import_scene.obj(filepath=obj.render_filename,
+                                       use_split_objects=False,
+                                       **obj.render_import_kwargs)
           elif extension in ["glb", "gltf"]:
             bpy.ops.import_scene.gltf(filepath=obj.render_filename,
                                       **obj.render_import_kwargs)
