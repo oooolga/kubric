@@ -831,7 +831,11 @@ class AttributeSetter:
       # use converter if given
       new_value = self.converter(new_value)
 
-    setattr(self.blender_obj, self.attribute, new_value)
+    try:
+      setattr(self.blender_obj, self.attribute, new_value)
+    except (ValueError, TypeError) as e:
+      logging.getLogger(__name__).warning(
+          f"Failed to set {self.attribute} = {new_value}: {e}")
 
 
 class KeyframeSetter:
@@ -840,7 +844,11 @@ class KeyframeSetter:
     self.blender_obj = blender_obj
 
   def __call__(self, change):
-    self.blender_obj.keyframe_insert(self.attribute_path, frame=change.frame)
+    try:
+      self.blender_obj.keyframe_insert(self.attribute_path, frame=change.frame)
+    except (ValueError, TypeError) as e:
+      logging.getLogger(__name__).warning(
+          f"Failed to keyframe {self.attribute_path}: {e}")
 
 
 def register_object3d_setters(obj, blender_obj):
