@@ -215,7 +215,11 @@ class Blender(core.View):
       self.exr_output_node.mute = True
     else:
       self.exr_output_node.mute = False
-      self.exr_output_node.base_path = str(path_prefix)
+      # Blender 5.0+: base_path -> directory
+      if hasattr(self.exr_output_node, 'directory'):
+        self.exr_output_node.directory = str(path_prefix)
+      else:
+        self.exr_output_node.base_path = str(path_prefix)
 
   def save_state(self, path: PathLike, pack_textures: bool = True):
     """Saves the '.blend' blender file to disk.
