@@ -125,9 +125,16 @@ def set_up_exr_output_node(default_layers=("Image", "Depth"),
 
   # manually convert to RGBA. See:
   # https://blender.stackexchange.com/questions/175621/incorrect-vector-pass-output-no-alpha-zero-values/175646#175646
-  split_rgba = tree.nodes.new(type="CompositorNodeSepRGBA")
-  combine_rgba = tree.nodes.new(type="CompositorNodeCombRGBA")
-  for channel in "RGBA":
+  # Blender 5.0+: SepRGBA/CombRGBA -> SeparateColor/CombineColor
+  try:
+    split_rgba = tree.nodes.new(type="CompositorNodeSepRGBA")
+    combine_rgba = tree.nodes.new(type="CompositorNodeCombRGBA")
+    channels = "RGBA"
+  except RuntimeError:
+    split_rgba = tree.nodes.new(type="CompositorNodeSeparateColor")
+    combine_rgba = tree.nodes.new(type="CompositorNodeCombineColor")
+    channels = ["Red", "Green", "Blue", "Alpha"]
+  for channel in channels:
     links.new(split_rgba.outputs.get(channel), combine_rgba.inputs.get(channel))
   out_node.file_output_items.new("RGBA", "Vector") if _use_new_api else out_node.file_slots.new("Vector")
   links.new(render_node_aux.outputs.get("Vector"), split_rgba.inputs.get("Image"))
