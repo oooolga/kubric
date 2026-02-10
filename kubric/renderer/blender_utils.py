@@ -99,13 +99,28 @@ def set_up_exr_output_node(default_layers=("Image", "Depth"),
   # set the format to EXR (multilayer)
   out_node.format.file_format = "OPEN_EXR_MULTILAYER"
 
-  out_node.file_slots.clear()
+  # Blender 5.0+: file_slots -> file_output_items, .new(name) -> .new(type, name)
+  _use_new_api = hasattr(out_node, 'file_output_items')
+
+  def _clear_slots():
+    if _use_new_api:
+      out_node.file_output_items.clear()
+    else:
+      out_node.file_slots.clear()
+
+  def _new_slot(name, socket_type='RGBA'):
+    if _use_new_api:
+      out_node.file_output_items.new(socket_type, name)
+    else:
+      out_node.file_slots.new(name)
+
+  _clear_slots()
   for layer_name in default_layers:
-    out_node.file_slots.new(layer_name)
+    _new_slot(layer_name)
     links.new(render_node.outputs.get(layer_name), out_node.inputs.get(layer_name))
 
   for layer_name in aux_layers:
-    out_node.file_slots.new(layer_name)
+    _new_slot(layer_name)
     links.new(render_node_aux.outputs.get(layer_name), out_node.inputs.get(layer_name))
 
   # manually convert to RGBA. See:
@@ -114,7 +129,7 @@ def set_up_exr_output_node(default_layers=("Image", "Depth"),
   combine_rgba = tree.nodes.new(type="CompositorNodeCombRGBA")
   for channel in "RGBA":
     links.new(split_rgba.outputs.get(channel), combine_rgba.inputs.get(channel))
-  out_node.file_slots.new("Vector")
+  out_node.file_output_items.new("RGBA", "Vector") if _use_new_api else out_node.file_slots.new("Vector")
   links.new(render_node_aux.outputs.get("Vector"), split_rgba.inputs.get("Image"))
   links.new(combine_rgba.outputs.get("Image"), out_node.inputs.get("Vector"))
 
